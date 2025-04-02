@@ -26,7 +26,7 @@ export default function App() {
   const [selectedReport, setSelectedReport] = useState(null);
 
   // ------------------------
-  // 1. AUTH & SESSION LOGIC
+  // 1. AUTH & SESSION LOGIC this is just a test
   // ------------------------
   useEffect(() => {
     const fetchSession = async () => {
