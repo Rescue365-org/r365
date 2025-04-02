@@ -14,6 +14,7 @@ import RoleSelectionScreen from './screens/RoleSelectionScreen';
 import BystanderScreen from './screens/BystanderScreen';
 import RescuerScreen from './screens/RescuerScreen';
 import VetScreen from './screens/VetScreen';
+import DonationScreen from './screens/DonationScreen';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -350,6 +351,10 @@ export default function App() {
           setSelectedReport={setSelectedReport}
           updateRescueStatus={updateRescueStatus}
         />
+      )}
+
+      {role === 'donor' && (
+        <DonationScreen/>
       )}
 
       <TouchableOpacity

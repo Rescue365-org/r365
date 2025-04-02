@@ -11,25 +11,32 @@ export default function RoleSelectionScreen({ setRole, handleSignOut }) {
       </Text>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 20 }}>
         <TouchableOpacity
-          style={{ alignItems: 'center', padding: 15, backgroundColor: '#3b7d3c', borderRadius: 8, width: '30%' }}
+          style={{ alignItems: 'center', padding: 15, backgroundColor: '#3b7d3c', borderRadius: 8, width: '22%' }}
           onPress={() => setRole('bystander')}
         >
           <FontAwesome5 name="paw" size={24} color="#fff" />
-          <Text style={{ color: '#fff', fontSize: 14, marginTop: 5 }}>Bystander</Text>
+          <Text style={{ color: '#fff', fontSize: 12, marginTop: 5 }}>Bystander</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={{ alignItems: 'center', padding: 15, backgroundColor: '#3b7d3c', borderRadius: 8, width: '30%' }}
+          style={{ alignItems: 'center', padding: 15, backgroundColor: '#3b7d3c', borderRadius: 8, width: '22%' }}
           onPress={() => setRole('rescuer')}
         >
           <MaterialIcons name="volunteer-activism" size={24} color="#fff" />
-          <Text style={{ color: '#fff', fontSize: 14, marginTop: 5 }}>Rescuer</Text>
+          <Text style={{ color: '#fff', fontSize: 12, marginTop: 5 }}>Rescuer</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={{ alignItems: 'center', padding: 15, backgroundColor: '#3b7d3c', borderRadius: 8, width: '30%' }}
+          style={{ alignItems: 'center', padding: 15, backgroundColor: '#3b7d3c', borderRadius: 8, width: '22%' }}
           onPress={() => setRole('vet')}
         >
           <FontAwesome5 name="clinic-medical" size={24} color="#fff" />
-          <Text style={{ color: '#fff', fontSize: 14, marginTop: 5 }}>Vet Staff</Text>
+          <Text style={{ color: '#fff', fontSize: 12, marginTop: 5 }}>Vet Staff</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ alignItems: 'center', padding: 15, backgroundColor: '#3b7d3c', borderRadius: 8, width: '22%' }}
+          onPress={() => setRole('donor')}
+        >
+          <MaterialIcons name="attach-money" size={24} color="#fff" />
+          <Text style={{ color: '#fff', fontSize: 12, marginTop: 5 }}>Donor</Text>
         </TouchableOpacity>
       </View>
 
