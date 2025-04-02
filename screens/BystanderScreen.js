@@ -34,11 +34,11 @@ export default function BystanderScreen({
           onValueChange={(itemValue) => setAnimalType(itemValue)}
         >
           <Picker.Item label="-- Select an option --" value="" color= "#999"/>
-          <Picker.Item label="Dog" value="Dog" />
-          <Picker.Item label="Cat" value="Cat" />
-          <Picker.Item label="Bird" value="Bird" />
-          <Picker.Item label="Injured Wildlife" value="Wildlife" />
-          <Picker.Item label="Other" value="Other" />
+          <Picker.Item label="Dog" value="dog" />
+          <Picker.Item label="Cat" value="cat" />
+          <Picker.Item label="Bird" value="bird" />
+          <Picker.Item label="Injured Wildlife" value="wildlife" />
+          <Picker.Item label="Other" value="other" />
         </Picker>
       </View>
 
