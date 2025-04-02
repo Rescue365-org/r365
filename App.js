@@ -5,6 +5,8 @@ import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
 import { supabase } from './services/supabaseClient';
 import { getDistance } from 'geolib';
 
@@ -15,6 +17,8 @@ import BystanderScreen from './screens/BystanderScreen';
 import RescuerScreen from './screens/RescuerScreen';
 import VetScreen from './screens/VetScreen';
 import DonationScreen from './screens/DonationScreen';
+import RescuerProfileScreen from './screens/RescuerProfileScreen';
+
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -26,6 +30,9 @@ export default function App() {
   const [image, setImage] = useState(null);
   const [rescueReports, setRescueReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [rescuerProfileExists, setRescuerProfileExists] = useState(false);
+  const [reporterInfo, setReporterInfo] = useState(null);
+
 
   // ------------------------
   // 1. AUTH & SESSION LOGIC
@@ -52,7 +59,12 @@ export default function App() {
 
     // Listen for auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
+      if (session?.user) {
+        setUser(session.user);
+        registerForPushNotifications(session.user.id);
+      } else {
+        setUser(null);
+      }
     });
 
     return () => {
@@ -85,7 +97,9 @@ export default function App() {
               refresh_token,
             });
             if (sessionData?.session) {
-              setUser(sessionData.session.user);
+              const loggedInUser = sessionData.session.user;
+              setUser(loggedInUser);
+              registerForPushNotifications(loggedInUser.id);
             }
           }
         }
@@ -126,6 +140,32 @@ export default function App() {
     return () => subscription.remove();
   }, []);
 
+  const registerForPushNotifications = async (userId) => {
+    if (Device.isDevice) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== 'granted') {
+        console.log("Final notification status:", finalStatus);
+        Alert.alert('Permission not granted for push notifications!');
+        return;
+      }
+  
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      console.log('Expo push token:', token);
+  
+      // Save token to Supabase
+      await supabase
+        .from('device_tokens')
+        .upsert({ user_id: userId, push_token: token }, { onConflict: ['user_id'] });
+    } else {
+      Alert.alert('Push notifications only work on physical devices');
+    }
+  };
+  
   // ------------------------
   // 2. LOCATION & IMAGE LOGIC
   // ------------------------
@@ -207,6 +247,7 @@ export default function App() {
         address: location.address,
         image_url: image,
         status: "Pending",
+        reporter_id: user.id
       },
     ]);
     if (error) {
@@ -231,20 +272,136 @@ export default function App() {
       .from('rescue_reports')
       .update({ status })
       .eq('id', reportId);
+  
     if (error) {
       console.error("Error updating rescue status:", error);
       Alert.alert("Error", "Unable to update rescue status.");
-    } else {
-      Alert.alert("Status Updated", `Rescue status set to "${status}".`);
-      if (status === "Rescue Complete") {
-        setRescueReports(currentReports =>
-          currentReports.filter(report => report.id !== reportId)
-        );
-        Alert.alert("Bystander Notified", "The original reporter has been notified.");
+      return;
+    }
+  
+    Alert.alert("Status Updated", `Rescue status set to "${status}".`);
+  
+    if (status === "Rescue Complete") {
+      setRescueReports(currentReports =>
+        currentReports.filter(report => report.id !== reportId)
+      );
+    }
+  
+    const { data: reportDetails, error: reportError } = await supabase
+      .from('rescue_reports')
+      .select('reporter_id')
+      .eq('id', reportId)
+      .single();
+  
+    if (reportDetails?.reporter_id) {
+      const { data: tokenRow, error: tokenError } = await supabase
+        .from('device_tokens')
+        .select('push_token')
+        .eq('user_id', reportDetails.reporter_id)
+        .single();
+  
+      const pushToken = tokenRow?.push_token;
+  
+      if (pushToken) {
+        await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Accept-encoding': 'gzip, deflate',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: pushToken,
+            title: 'Rescue Update',
+            body: `Your rescue is now marked: ${status}`,
+          }),
+        });
       }
     }
   };
+  
 
+  const acceptRescue = async (reportId) => {
+    const { error } = await supabase
+      .from('rescue_reports')
+      .update({
+        assigned_rescuer_id: user.id,
+        status: 'Rescue Accepted',
+      })
+      .eq('id', reportId);
+  
+    if (error) {
+      console.error('Error accepting rescue:', error);
+      Alert.alert("Error", "Could not accept this rescue.");
+    } else {
+      Alert.alert("Accepted", "You’ve claimed this rescue.");
+      fetchReports();
+  
+      // Get reporter info
+      const { data: report } = await supabase
+        .from('rescue_reports')
+        .select('reporter_id')
+        .eq('id', reportId)
+        .single();
+  
+      if (report?.reporter_id) {
+        const info = await fetchReporterInfo(report.reporter_id);
+        setReporterInfo(info);
+      }
+    }
+  };
+  
+  
+  const unassignRescue = async (reportId) => {
+    const { error } = await supabase
+      .from('rescue_reports')
+      .update({
+        assigned_rescuer_id: null,
+        status: 'Pending'
+      })
+      .eq('id', reportId);
+  
+    if (error) {
+      console.error("Error unassigning rescue:", error);
+      Alert.alert("Error", "Could not unassign the rescue.");
+    } else {
+      Alert.alert("Rescue Unassigned", "You’ve unassigned this case.");
+      fetchReports(); // Refresh the list
+    }
+  };
+  
+  const postStatusUpdate = async (reportId, message) => {
+    const { error } = await supabase.from('rescue_status_updates').insert([
+      {
+        report_id: reportId,
+        rescuer_id: user.id,
+        message: message,
+      },
+    ]);
+  
+    if (error) {
+      console.error('Error posting status update:', error);
+      Alert.alert("Error", "Failed to post status update.");
+    } else {
+      Alert.alert("Status Posted", "Your update was saved!");
+    }
+  };
+  
+  const fetchReporterInfo = async (reporterId) => {
+    const { data, error } = await supabase
+      .from('auth.users')
+      .select('email') // By default, only email is available in auth.users
+      .eq('id', reporterId)
+      .single();
+  
+    if (error) {
+      console.error("Error fetching reporter info:", error);
+      return null;
+    }
+  
+    return data;
+  };
+  
   const confirmRescue = (report) => {
     Alert.alert(
       "Confirm Rescue",
@@ -278,8 +435,17 @@ export default function App() {
             { latitude: location.latitude, longitude: location.longitude },
             { latitude: report.location_lat, longitude: report.location_lng }
           );
-          return distance <= 10 * 1609.34 && report.status !== "Rescue Complete";
+      
+          const isUnassigned = !report.assigned_rescuer_id;
+          const isAssignedToMe = report.assigned_rescuer_id === user.id;
+      
+          return (
+            distance <= 10 * 1609.34 &&
+            report.status !== 'Rescue Complete' &&
+            (isUnassigned || isAssignedToMe)
+          );
         });
+      
         setRescueReports(nearbyReports);
       } else if (role === 'vet') {
         const inProgressReports = reports.filter((report) => report.status === "Rescue In Progress");
@@ -291,6 +457,26 @@ export default function App() {
       fetchReports();
     }
   }, [role, location]);
+
+  useEffect(() => {
+    const checkRescuerProfile = async () => {
+      if (user && role === 'rescuer') {
+        const { data, error } = await supabase
+          .from('rescuers')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+  
+        if (data) setRescuerProfileExists(true);
+        else setRescuerProfileExists(false);
+      }
+    };
+    
+    if (role === 'rescuer' && user) {
+        checkRescuerProfile();
+    }
+  }, [role, user]);
+  
 
   // ------------------------
   // 5. RENDER LOGIC
@@ -340,13 +526,23 @@ export default function App() {
         />
       )}
 
-      {role === 'rescuer' && (
+      {role === 'rescuer' && !rescuerProfileExists && (
+        <RescuerProfileScreen
+          userId={user.id}
+          onProfileComplete={() => setRescuerProfileExists(true)}
+        />
+      )}
+
+      {role === 'rescuer' && rescuerProfileExists && (
         <RescuerScreen
           rescueReports={rescueReports}
           selectedReport={selectedReport}
           setSelectedReport={setSelectedReport}
           confirmRescue={confirmRescue}
           updateRescueStatus={updateRescueStatus}
+          acceptRescue={acceptRescue}
+          postStatusUpdate={postStatusUpdate}
+          unassignRescue={unassignRescue}
         />
       )}
 

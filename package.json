@@ -17,14 +17,15 @@
     "expo-image-picker": "~16.0.6",
     "expo-linking": "~7.0.5",
     "expo-location": "~18.0.7",
-    "expo-notifications": "~0.29.13",
+    "expo-notifications": "~0.29.14",
     "expo-web-browser": "~14.0.2",
     "geolib": "^3.3.4",
     "react": "18.3.1",
     "react-native": "0.76.7",
     "react-native-maps": "1.18.0",
     "react-native-picker-select": "^9.3.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "expo-device": "~7.0.3"
   },
   "devDependencies": {
     "@react-native-community/cli": "latest",
