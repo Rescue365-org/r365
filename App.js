@@ -22,6 +22,7 @@ export default function App() {
   const [location, setLocation] = useState(null);
   const [description, setDescription] = useState('');
   const [animalType, setAnimalType] = useState('');
+  const [severity, setSeverity] = useState('');
   const [image, setImage] = useState(null);
   const [rescueReports, setRescueReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -192,13 +193,14 @@ export default function App() {
   // 3. RESCUE REPORT LOGIC
   // ------------------------
   const submitRescueReport = async () => {
-    if (!location || !description || !animalType || !image) {
+    if (!location || !description || !animalType || !image || !severity) {
       Alert.alert("Missing Information", "Please fill in all fields, add a photo, and get your location.");
       return;
     }
     const { data, error } = await supabase.from('rescue_reports').insert([
       {
         animal_type: animalType,
+        severity: severity,
         description: description,
         location_lat: location.latitude,
         location_lng: location.longitude,
@@ -310,7 +312,9 @@ export default function App() {
 
   // (C) If user has selected a role, show the appropriate screen
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#f0f8f5', padding: 20 }}>
+    <ScrollView 
+    style={{ flex: 1, backgroundColor: '#f0f8f5', padding: 20 }}
+    contentContainerStyle={{ paddingBottom: 100 }}>
       <View style={{ marginTop: 40, alignItems: 'center', marginBottom: 20 }}>
         <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#3b7d3c', textAlign: 'center', marginBottom: 10 }}>
           Rescue365
@@ -328,6 +332,8 @@ export default function App() {
           setDescription={setDescription}
           animalType={animalType}
           setAnimalType={setAnimalType}
+          severity={severity}
+          setSeverity={setSeverity}
           image={image}
           pickImage={pickImage}
           submitRescueReport={submitRescueReport}
@@ -357,14 +363,13 @@ export default function App() {
         <DonationScreen/>
       )}
 
-      <TouchableOpacity
-        style={{ marginTop: 20 }}
-        onPress={() => setRole(null)}
-      >
+    <View style={{ alignItems: 'center', marginTop: 40, marginBottom: 60 }}>
+      <TouchableOpacity onPress={() => setRole(null)}>
         <Text style={{ color: '#3b7d3c', fontSize: 16, textDecorationLine: 'underline' }}>
           Change Role
         </Text>
       </TouchableOpacity>
+    </View>
     </ScrollView>
   );
 }

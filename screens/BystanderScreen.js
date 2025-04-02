@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
+import { Picker } from '@react-native-picker/picker';
 
 export default function BystanderScreen({
   location,
@@ -11,23 +12,61 @@ export default function BystanderScreen({
   animalType,
   setAnimalType,
   image,
+  severity,
+  setSeverity,
   pickImage,
   submitRescueReport,
 }) {
+
+  const severityColors = {
+    Mild: '#81c784',
+    Moderate: '#fff176',
+    Severe: '#ffb74d',
+    Critical: '#e57373',
+  };
+
   return (
     <View style={{ width: '100%', alignItems: 'center' }}>
-      <Text style={styles.label}>Animal Type:</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter animal type (e.g., dog, cat)"
-        value={animalType}
-        onChangeText={setAnimalType}
-      />
+      <Text style={styles.label}>Choose Animal Type:</Text>
+      <View style={styles.dropdown}>
+        <Picker
+          selectedValue={animalType}
+          onValueChange={(itemValue) => setAnimalType(itemValue)}
+        >
+          <Picker.Item label="-- Select an option --" value="" color= "#999"/>
+          <Picker.Item label="Dog" value="Dog" />
+          <Picker.Item label="Cat" value="Cat" />
+          <Picker.Item label="Bird" value="Bird" />
+          <Picker.Item label="Injured Wildlife" value="Wildlife" />
+          <Picker.Item label="Other" value="Other" />
+        </Picker>
+      </View>
+
+      
+      <Text style={styles.label}>Severity:</Text>
+      <View style={styles.severityContainer}>
+        {['Mild', 'Moderate', 'Severe', 'Critical'].map((level) => (
+          <TouchableOpacity
+            key={level}
+            style={[
+              styles.severityButton,
+              severity === level && {
+                backgroundColor: severityColors[level],
+                borderColor: '#999',
+              },
+            ]}
+            onPress={() => setSeverity(level)}
+          >
+            <Text style={styles.severityText}>{level}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
 
       <Text style={styles.label}>Description:</Text>
       <TextInput
         style={styles.input}
-        placeholder="Brief description of the situation"
+        placeholder="Brief description of the situation..."
         value={description}
         onChangeText={setDescription}
       />
@@ -125,4 +164,36 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 15,
   },
+  severityContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    marginBottom: 15,
+  },
+  severityButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#eee',
+    margin: 5,
+  },
+  selectedSeverity: {
+    backgroundColor: '#3b7d3c',
+  },
+  severityText: {
+    color: '#333',
+    fontSize: 14,
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: '#c4c4c4',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 15,
+    width: '100%',
+    backgroundColor: '#fff',
+  },
+  
 });
