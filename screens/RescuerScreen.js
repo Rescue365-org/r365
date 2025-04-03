@@ -76,6 +76,7 @@ export default function RescuerScreen({
                 }}
               >
                 <Text style={styles.label}>Animal Type: {report.animal_type}</Text>
+                <Text style={styles.label}>Severity: {report.severity}</Text>
                 <Text>Description: {report.description}</Text>
                 <Text>Location: {report.address || 'Address not available'}</Text>
                 {report.image_url && (
