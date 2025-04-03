@@ -525,18 +525,25 @@ export default function App() {
         });
       
         setRescueReports(nearbyReports);
+        if (selectedReport && !nearbyReports.some(r => r.id === selectedReport.id)) {
+          setSelectedReport(null);
+        }
       } else if (role === 'vet') {
         const inProgressReports = reports.filter((report) => report.status === "Rescue In Progress");
         setRescueReports(inProgressReports);
+        if (selectedReport && !inProgressReports.some(r => r.id === selectedReport.id)) {
+          setSelectedReport(null);
+        }
       } else {
         setRescueReports([]);
+        setSelectedReport(null);
       }
     };
 
     if ((role === 'rescuer' || role === 'vet') && user) {
       fetchReports();
     }
-  }, [role, location, user]);
+  }, [role, location, user, selectedReport]);
 
   useEffect(() => {
     const checkRescuerProfile = async () => {
