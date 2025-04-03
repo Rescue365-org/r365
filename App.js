@@ -34,7 +34,36 @@ export default function App() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [rescuerProfileExists, setRescuerProfileExists] = useState(false);
   const [reporterInfo, setReporterInfo] = useState(null);
+  const [isVerifiedVet, setIsVerifiedVet] = useState(false);
 
+  const developerOverrideEmails = [
+    'jraphino@bu.edu',
+    'kbyun1@bu.edu',
+    'sjzuniga@bu.edu',
+    'ramondon@bu.edu'
+  ];
+
+  useEffect(() => {
+    const checkVetVerification = async () => {
+      if (user && role === 'vet') {
+        const { data: vetData, error } = await supabase
+          .from('vets')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (vetData || developerOverrideEmails.includes(user.email)) {
+          setIsVerifiedVet(true);
+        } else {
+          setIsVerifiedVet(false);
+          Alert.alert("Access Denied", "You are not verified to access Vet tools.");
+          setRole(null);
+        }
+      }
+    };
+
+    checkVetVerification();
+  }, [role, user]);
 
   // ------------------------
   // 1. AUTH & SESSION LOGIC
@@ -478,7 +507,7 @@ export default function App() {
         Alert.alert("Error", "Unable to fetch rescue reports.");
         return;
       }
-      if (role === 'rescuer' && location) {
+      if (role === 'rescuer' && location && user) {
         const nearbyReports = reports.filter((report) => {
           const distance = getDistance(
             { latitude: location.latitude, longitude: location.longitude },
@@ -499,13 +528,15 @@ export default function App() {
       } else if (role === 'vet') {
         const inProgressReports = reports.filter((report) => report.status === "Rescue In Progress");
         setRescueReports(inProgressReports);
+      } else {
+        setRescueReports([]);
       }
     };
 
-    if (role === 'rescuer' || role === 'vet') {
+    if ((role === 'rescuer' || role === 'vet') && user) {
       fetchReports();
     }
-  }, [role, location]);
+  }, [role, location, user]);
 
   useEffect(() => {
     const checkRescuerProfile = async () => {
@@ -544,6 +575,7 @@ export default function App() {
       />
     );
   }
+
 
   // (C) If user has selected a role, show the appropriate screen
   return (
@@ -597,7 +629,7 @@ export default function App() {
         />
       )}
 
-      {role === 'vet' && (
+      {role === 'vet' && isVerifiedVet && (
         <VetScreen
           rescueReports={rescueReports}
           selectedReport={selectedReport}
