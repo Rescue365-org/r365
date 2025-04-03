@@ -7,6 +7,8 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import * as FileSystem from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { supabase } from './services/supabaseClient';
 import { getDistance } from 'geolib';
 
@@ -232,30 +234,77 @@ export default function App() {
   // ------------------------
   // 3. RESCUE REPORT LOGIC
   // ------------------------
+  
   const submitRescueReport = async () => {
-    if (!location || !description || !animalType || !image || !severity) {
-      Alert.alert("Missing Information", "Please fill in all fields, add a photo, and get your location.");
-      return;
-    }
-    const { data, error } = await supabase.from('rescue_reports').insert([
-      {
-        animal_type: animalType,
-        severity: severity,
-        description: description,
-        location_lat: location.latitude,
-        location_lng: location.longitude,
-        address: location.address,
-        image_url: image,
-        status: "Pending",
-        reporter_id: user.id
-      },
-    ]);
-    if (error) {
-      console.error("Error submitting rescue report:", error);
-      Alert.alert("Error", "There was an issue submitting the rescue report.");
-    } else {
-      Alert.alert("Report Submitted", "Your rescue report has been successfully submitted!");
-      console.log(data);
+    try {
+      if (!location || !description || !animalType || !image || !severity) {
+        Alert.alert("Missing Information", "Please fill in all fields, add a photo, and get your location.");
+        return;
+      }
+  
+      console.log("Compressing image...");
+      const compressed = await ImageManipulator.manipulateAsync(
+        image,
+        [{ resize: { width: 800 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+      );
+  
+      const imageUri = compressed.uri;
+      const imageName = `rescue-${Date.now()}.jpg`;
+  
+      console.log("Uploading to Supabase Storage...");
+  
+      const { data, error: uploadError } = await supabase.storage
+        .from('rescue_images')
+        .upload(imageName, {
+          uri: imageUri,
+          type: 'image/jpeg',
+          name: imageName,
+        });
+  
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        Alert.alert("Error", "Image upload failed.");
+        return;
+      }
+  
+      const { data: publicUrlData, error: urlError } = supabase.storage
+        .from('rescue_images')
+        .getPublicUrl(imageName);
+  
+      if (urlError || !publicUrlData?.publicUrl) {
+        console.error("URL error:", urlError);
+        Alert.alert("Error", "Failed to retrieve image URL.");
+        return;
+      }
+  
+      const imageUrl = publicUrlData.publicUrl;
+  
+      console.log("Inserting into database...");
+      const { error: dbError } = await supabase.from('rescue_reports').insert([
+        {
+          animal_type: animalType,
+          severity: severity,
+          description: description,
+          location_lat: location.latitude,
+          location_lng: location.longitude,
+          address: location.address,
+          image_url: imageUrl,
+          status: "Pending",
+          reporter_id: user.id,
+        },
+      ]);
+  
+      if (dbError) {
+        console.error("DB insert error:", dbError);
+        Alert.alert("Error", "Failed to save report.");
+      } else {
+        Alert.alert("Success", "Your rescue report has been submitted!");
+        setImage(null);
+      }
+    } catch (err) {
+      console.error("Unhandled error during report submission:", err);
+      Alert.alert("Unexpected Error", "Something went wrong. Try again.");
     }
   };
 
