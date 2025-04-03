@@ -35,6 +35,7 @@ export default function App() {
   const [rescuerProfileExists, setRescuerProfileExists] = useState(false);
   const [reporterInfo, setReporterInfo] = useState(null);
   const [isVerifiedVet, setIsVerifiedVet] = useState(false);
+  const [acceptedReportIds, setAcceptedReportIds] = useState([]);
 
   const developerOverrideEmails = [
     'jraphino@bu.edu',
@@ -525,11 +526,25 @@ export default function App() {
         });
       
         setRescueReports(nearbyReports);
+        
+        const accepted = nearbyReports
+          .filter((r) =>
+            r.assigned_rescuer_id === user.id &&
+            r.reporter_id !== user.id
+          )
+          .map((r) => r.id);
+
+        setAcceptedReportIds(accepted);
+
         if (selectedReport && !nearbyReports.some(r => r.id === selectedReport.id)) {
           setSelectedReport(null);
         }
       } else if (role === 'vet') {
-        const inProgressReports = reports.filter((report) => report.status === "Rescue In Progress");
+        const inProgressReports = reports.filter(
+          (report) =>
+            report.status === "Rescue In Progress" ||
+            report.status === "Donations Needed"
+        );
         setRescueReports(inProgressReports);
         if (selectedReport && !inProgressReports.some(r => r.id === selectedReport.id)) {
           setSelectedReport(null);

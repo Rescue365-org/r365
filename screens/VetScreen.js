@@ -1,6 +1,6 @@
 // screens/VetScreen.js
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, TextInput } from 'react-native';
 
 export default function VetScreen({
   rescueReports,
@@ -41,12 +41,21 @@ export default function VetScreen({
           <View style={styles.actions}>
             <Text style={styles.selectedText}>Selected Report: {selectedReport.animal_type}</Text>
 
+            {selectedReport.status === "Donations Needed" ? (
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: '#4CAF50' }]}
+              onPress={() => updateRescueStatus(selectedReport.id, 'Rescue Complete')}
+            >
+              <Text style={styles.buttonText}>Close Donation</Text>
+            </TouchableOpacity>
+          ) : (
             <TouchableOpacity
               style={[styles.button, { backgroundColor: '#4CAF50' }]}
               onPress={() => updateRescueStatus(selectedReport.id, 'Rescue Complete')}
             >
               <Text style={styles.buttonText}>Mark as Complete</Text>
             </TouchableOpacity>
+          )}
 
             <TouchableOpacity
               style={[styles.button, { backgroundColor: '#f39c12' }]}
