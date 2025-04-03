@@ -514,14 +514,16 @@ export default function App() {
             { latitude: location.latitude, longitude: location.longitude },
             { latitude: report.location_lat, longitude: report.location_lng }
           );
-      
+          
+  
           const isUnassigned = !report.assigned_rescuer_id;
           const isAssignedToMe = report.assigned_rescuer_id === user.id;
+         
       
           return (
             distance <= 10 * 1609.34 &&
             report.status !== 'Rescue Complete' //&&
-           // (isUnassigned || isAssignedToMe)
+            //(isUnassigned || isAssignedToMe)
           );
         });
       
