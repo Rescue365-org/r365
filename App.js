@@ -592,6 +592,8 @@ export default function App() {
           acceptRescue={acceptRescue}
           postStatusUpdate={postStatusUpdate}
           unassignRescue={unassignRescue}
+          reporterInfo={reporterInfo}
+          currentUserId={user.id}
         />
       )}
 

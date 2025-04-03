@@ -11,7 +11,8 @@ export default function RescuerScreen({
   updateRescueStatus,
   acceptRescue,
   postStatusUpdate,
-  unassignRescue
+  unassignRescue,
+  currentUserId
 }) {
   const [acceptedReportIds, setAcceptedReportIds] = useState([]);
   const [statusMessage, setStatusMessage] = useState('');
@@ -19,7 +20,10 @@ export default function RescuerScreen({
 
   useEffect(() => {
     const accepted = rescueReports
-      .filter((r) => r.assigned_rescuer_id)
+      .filter((r) => 
+      r.assigned_rescuer_id === currentUserId &&
+      r.reporter_id !== currentUserId
+      )
       .map((r) => r.id);
     setAcceptedReportIds(accepted);
   }, [rescueReports]);
