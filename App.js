@@ -520,8 +520,8 @@ export default function App() {
       
           return (
             distance <= 10 * 1609.34 &&
-            report.status !== 'Rescue Complete' &&
-            (isUnassigned || isAssignedToMe)
+            report.status !== 'Rescue Complete' //&&
+           // (isUnassigned || isAssignedToMe)
           );
         });
       
