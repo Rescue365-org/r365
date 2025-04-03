@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, RefreshControl, Linking } from 'react-native';
 import { supabase } from '../services/supabaseClient';
 import DonateButton from '../components/DonateButton';
 
@@ -28,6 +28,11 @@ export default function DonationScreen() {
     setRefreshing(true);
     await fetchDonationsNeeded();
     setRefreshing(false);
+  };
+
+  const handleDonatePress = (amount = 10) => {
+    const paypalUrl = `https://www.paypal.me/Rescue365Project/${amount}`;
+    Linking.openURL(paypalUrl);
   };
 
   return (
@@ -72,7 +77,19 @@ export default function DonationScreen() {
             <Text style={{ fontStyle: 'italic', color: '#555', marginBottom: 10 }}>
               Location: {report.address}
             </Text>
-            <DonateButton reportId={report.id} />
+            <TouchableOpacity
+              onPress={() => handleDonatePress(10)}
+              style={{
+                backgroundColor: '#0070ba',
+                paddingVertical: 12,
+                borderRadius: 8,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
+                Donate via PayPal
+              </Text>
+            </TouchableOpacity>
           </View>
         ))
       )}
