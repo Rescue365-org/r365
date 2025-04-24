@@ -503,6 +503,10 @@ export default function App() {
   useEffect(() => {
     const fetchReports = async () => {
       const { data: reports, error } = await supabase.from('rescue_reports').select('*');
+      
+      console.log("Fetched reports:", reports);
+      console.log("Current user ID:", user.id);
+
       if (error) {
         console.error("Error fetching rescue reports:", error);
         Alert.alert("Error", "Unable to fetch rescue reports.");
@@ -514,18 +518,35 @@ export default function App() {
             { latitude: location.latitude, longitude: location.longitude },
             { latitude: report.location_lat, longitude: report.location_lng }
           );
-          
-  
+        
           const isUnassigned = !report.assigned_rescuer_id;
           const isAssignedToMe = report.assigned_rescuer_id === user.id;
-         
-      
+          const isReporter = report.reporter_id === user.id;
+          
+          if (report.reporter_id !== user.id) {
+            console.log("Report visible candidate:", {
+              id: report.id,
+              assigned_rescuer_id: report.assigned_rescuer_id,
+              reporter_id: report.reporter_id,
+              user_id: user.id,
+              distance: getDistance(
+                { latitude: location.latitude, longitude: location.longitude },
+                { latitude: report.location_lat, longitude: report.location_lng }
+              )
+            });
+          }
+          
           return (
             distance <= 10 * 1609.34 &&
-            report.status !== 'Rescue Complete' //&&
-            //(isUnassigned || isAssignedToMe)
+            report.status !== 'Rescue Complete' &&
+            (
+              isUnassigned ||                        // anyone can see
+              isAssignedToMe ||                     // I accepted it
+              (isReporter && isAssignedToMe)        // I reported it and accepted it
+            )
           );
         });
+        
       
         setRescueReports(nearbyReports);
         
