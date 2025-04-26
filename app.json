@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "0f6682b7-4e64-4cb0-b0cc-ab68dc6b6f28"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.kennethbyun.rescue365",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}
