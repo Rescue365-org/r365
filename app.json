@@ -1,5 +1,6 @@
 {
   "expo": {
+    "scheme": "rescue365",
     "extra": {
       "eas": {
         "projectId": "0f6682b7-4e64-4cb0-b0cc-ab68dc6b6f28"
@@ -13,3 +14,4 @@
     }
   }
 }
+

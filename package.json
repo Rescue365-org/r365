@@ -10,11 +10,16 @@
   "dependencies": {
     "@react-native-google-signin/google-signin": "^13.2.0",
     "@react-native-picker/picker": "^2.11.0",
+    "@react-navigation/native": "^7.1.6",
     "@supabase/supabase-js": "^2.46.1",
     "@types/react": "~18.3.12",
     "cors": "^2.8.5",
+    "eas": "^0.1.0",
     "expo": "latest",
+    "expo-auth-session": "^6.0.3",
+    "expo-device": "~7.0.3",
     "expo-file-system": "~18.0.12",
+    "expo-image-manipulator": "~13.0.6",
     "expo-image-picker": "~16.0.6",
     "expo-linking": "~7.0.5",
     "expo-location": "~18.0.7",
@@ -25,9 +30,7 @@
     "react-native": "0.76.7",
     "react-native-maps": "1.18.0",
     "react-native-picker-select": "^9.3.1",
-    "typescript": "^5.3.3",
-    "expo-device": "~7.0.3",
-    "expo-image-manipulator": "~13.0.6"
+    "typescript": "^5.3.3"
   },
   "devDependencies": {
     "@react-native-community/cli": "latest",

@@ -11,6 +11,7 @@ import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { supabase } from './services/supabaseClient';
 import { getDistance } from 'geolib';
+import * as AuthSession from 'expo-auth-session';
 
 // Import your new screens:
 import SignInScreen from './screens/SignInScreen';
@@ -108,26 +109,35 @@ export default function App() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const redirectUri = Linking.createURL("/auth/callback");
+      // ✨ Use AuthSession.makeRedirectUri instead of Linking.createURL
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: 'rescue365', // 👈 must match your app.json
+        path: 'auth/callback',
+        useProxy: false, // 👈 very important: no Expo proxy in standalone apps
+      });
+  
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: redirectUri },
+        options: { redirectTo: redirectUri }, // 👈 send the correct redirect to Supabase
       });
-
+  
       if (error) {
         console.error("Google Sign-In Error:", error);
         return;
       }
-
+  
       if (data?.url) {
         const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
-        if (result.type === "success") {
+  
+        if (result.type === "success" && result.url) {
           const { access_token, refresh_token } = extractTokensFromUrl(result.url);
+  
           if (access_token && refresh_token) {
             const { data: sessionData } = await supabase.auth.setSession({
               access_token,
               refresh_token,
             });
+  
             if (sessionData?.session) {
               const loggedInUser = sessionData.session.user;
               setUser(loggedInUser);
