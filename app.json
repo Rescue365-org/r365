@@ -1,17 +1,23 @@
 {
   "expo": {
     "scheme": "rescue365",
+    "ios": {
+      "bundleIdentifier": "com.kennethbyun.rescue365",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["rescue365"]
+          }
+        ],
+        "NSLocationWhenInUseUsageDescription": "Rescue365 needs your location to show nearby rescue reports.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We use your location to keep you updated about rescues even when the app is backgrounded."
+      }
+    },
     "extra": {
       "eas": {
         "projectId": "0f6682b7-4e64-4cb0-b0cc-ab68dc6b6f28"
       }
-    },
-    "ios": {
-      "bundleIdentifier": "com.kennethbyun.rescue365",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
     }
   }
 }
-

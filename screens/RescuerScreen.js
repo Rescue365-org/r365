@@ -1,3 +1,4 @@
+// screens/RescuerProfileScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, StyleSheet, TextInput, Alert } from 'react-native';
 import { supabase } from '../services/supabaseClient';

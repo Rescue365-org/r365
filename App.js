@@ -107,49 +107,53 @@ export default function App() {
 
   WebBrowser.maybeCompleteAuthSession();
 
-  const handleGoogleSignIn = async () => {
-    try {
-      // ✨ Use AuthSession.makeRedirectUri instead of Linking.createURL
-      const redirectUri = AuthSession.makeRedirectUri({
-        scheme: 'rescue365', // 👈 must match your app.json
-        path: 'auth/callback',
-        useProxy: false, // 👈 very important: no Expo proxy in standalone apps
-      });
-  
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: redirectUri }, // 👈 send the correct redirect to Supabase
-      });
-  
-      if (error) {
-        console.error("Google Sign-In Error:", error);
-        return;
+  WebBrowser.maybeCompleteAuthSession();
+
+async function handleGoogleSignIn() {
+  try {
+    // 1) Build the exact URI that Google and Supabase should redirect back to:
+    const redirectUri = AuthSession.makeRedirectUri({
+      scheme: 'rescue365',     // ← exactly your expo.scheme
+      path:   'auth/callback', // ← a dummy path, you’ll catch it in Linking listener
+      useProxy: false          // ← NO proxy in standalone/TestFlight
+    });
+
+    // 2) Kick off the OAuth flow:
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUri
       }
-  
-      if (data?.url) {
-        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
-  
-        if (result.type === "success" && result.url) {
-          const { access_token, refresh_token } = extractTokensFromUrl(result.url);
-  
-          if (access_token && refresh_token) {
-            const { data: sessionData } = await supabase.auth.setSession({
-              access_token,
-              refresh_token,
-            });
-  
-            if (sessionData?.session) {
-              const loggedInUser = sessionData.session.user;
-              setUser(loggedInUser);
-              registerForPushNotifications(loggedInUser.id);
-            }
-          }
-        }
+    });
+    if (error) throw error;
+
+    // 3) Open the system browser to let them sign in:
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+
+    // 4) If they approved, Supabase will append tokens in the fragment (#) of that redirectUri
+    if (result.type === 'success' && result.url) {
+      const params = new URLSearchParams(result.url.split('#')[1]);
+      const access_token  = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+
+      if (access_token && refresh_token) {
+        // 5) Tell supabase-js about the new session
+        const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+          access_token,
+          refresh_token
+        });
+        if (sessionError) throw sessionError;
+
+        // 6) Now you have a logged-in user
+        const user = sessionData.session.user;
+        // …store that in state, navigate to role-selection, etc.
       }
-    } catch (err) {
-      console.error("Error with Google Sign-In:", err);
     }
-  };
+  } catch (err) {
+    console.error('Google Sign-In failed:', err);
+    Alert.alert('Login error', err.message || err.toString());
+  }
+}
 
   const extractTokensFromUrl = (url) => {
     const params = new URLSearchParams(url.split("#")[1]);

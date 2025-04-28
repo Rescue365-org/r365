@@ -1,10 +1,10 @@
+// screens/NotificationScreen.js
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { supabase } from '../services/supabaseClient';
 
 export default function NotificationScreen({ goBackToRoleSelection }) {
-  const [rescuerNotifications, setRescuerNotifications] = useState([]);
-  const [reporterNotifications, setReporterNotifications] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -34,11 +34,7 @@ export default function NotificationScreen({ goBackToRoleSelection }) {
       if (error) {
         console.error('Error fetching notifications:', error.message);
       } else {
-        const rescuerNotifs = data.filter(notif => notif.assigned_rescuer_id === userId);
-        const reporterNotifs = data.filter(notif => notif.reporter_id === userId);
-
-        setRescuerNotifications(rescuerNotifs);
-        setReporterNotifications(reporterNotifs);
+        setNotifications(data || []);
       }
     } catch (e) {
       console.error('Fetch failed:', e);
@@ -54,8 +50,8 @@ export default function NotificationScreen({ goBackToRoleSelection }) {
 
   const renderItem = ({ item }) => (
     <View style={styles.notificationItem}>
-      <Text style={styles.notificationTitle}>{item.title}</Text>
-      <Text style={styles.notificationMessage}>{item.message}</Text>
+      <Text style={styles.notificationTitle}>{item.title || 'Untitled'}</Text>
+      <Text style={styles.notificationMessage}>{item.message || 'No message.'}</Text>
     </View>
   );
 
@@ -73,38 +69,18 @@ export default function NotificationScreen({ goBackToRoleSelection }) {
       {isLoading ? (
         <Text style={styles.noNotificationsText}>Loading...</Text>
       ) : (
-        <ScrollView
+        <FlatList
+          data={notifications}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+          ListEmptyComponent={() => (
+            <Text style={styles.noNotificationsText}>No notifications available.</Text>
+          )}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           contentContainerStyle={{ paddingBottom: 40 }}
-        >
-          {/* Rescuer Notifications */}
-          <Text style={styles.sectionHeader}>Rescuer Notifications</Text>
-          {rescuerNotifications.length === 0 ? (
-            <Text style={styles.noNotificationsText}>No rescuer notifications.</Text>
-          ) : (
-            <FlatList
-              data={rescuerNotifications}
-              renderItem={renderItem}
-              keyExtractor={(item) => `rescuer-${item.id}`}
-              scrollEnabled={false}  // Let ScrollView handle scrolling
-            />
-          )}
-
-          {/* Reporter Notifications */}
-          <Text style={styles.sectionHeader}>Reporter Notifications</Text>
-          {reporterNotifications.length === 0 ? (
-            <Text style={styles.noNotificationsText}>No reporter notifications.</Text>
-          ) : (
-            <FlatList
-              data={reporterNotifications}
-              renderItem={renderItem}
-              keyExtractor={(item) => `reporter-${item.id}`}
-              scrollEnabled={false}
-            />
-          )}
-        </ScrollView>
+        />
       )}
     </View>
   );
@@ -136,12 +112,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#3b7d3c',
     marginLeft: 20,
-  },
-  sectionHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#3b7d3c',
-    marginVertical: 10,
   },
   noNotificationsText: {
     fontSize: 16,

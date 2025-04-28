@@ -60,7 +60,7 @@ export default function RoleSelectionScreen({ setRole, handleSignOut }) {
 
           {/* Button to toggle notifications screen */}
           <TouchableOpacity onPress={showNotificationScreen} style={styles.notificationButton}>
-            <Text style={{ fontSize: 24 }}>🔔</Text>  {/* Bell Icon */}
+            <Text style={{ fontSize: 24 }}>🔔</Text>
           </TouchableOpacity>
         </>
       )}

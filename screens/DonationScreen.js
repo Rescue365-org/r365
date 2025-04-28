@@ -1,3 +1,4 @@
+// screens/DonationScreen.js
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, RefreshControl, Linking } from 'react-native';
 import { supabase } from '../services/supabaseClient';
