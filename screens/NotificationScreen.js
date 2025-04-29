@@ -1,6 +1,17 @@
-// screens/NotificationScreen.js
+// Combined NotificationScreen.js with UI improvements + delete button
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  RefreshControl,
+  Image,
+  Alert,
+  SafeAreaView,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/Feather';
 import { supabase } from '../services/supabaseClient';
 
 export default function NotificationScreen({ goBackToRoleSelection }) {
@@ -48,48 +59,74 @@ export default function NotificationScreen({ goBackToRoleSelection }) {
     fetchNotifications(true);
   };
 
+  const handleDelete = async (id) => {
+    try {
+      const { error } = await supabase.from('notifications').delete().eq('id', id);
+      if (error) {
+        console.error('Failed to delete notification:', error.message);
+        Alert.alert('Error', 'Failed to delete notification.');
+      } else {
+        setNotifications((prev) => prev.filter((item) => item.id !== id));
+      }
+    } catch (e) {
+      console.error('Delete error:', e);
+    }
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.notificationItem}>
-      <Text style={styles.notificationTitle}>{item.title || 'Untitled'}</Text>
-      <Text style={styles.notificationMessage}>{item.message || 'No message.'}</Text>
+      {item.image_url && (
+        <Image source={{ uri: item.image_url }} style={styles.notificationImage} resizeMode="cover" />
+      )}
+      <View style={styles.textContent}>
+        <Text style={styles.notificationTitle}>{item.title || 'Untitled'}</Text>
+        <Text style={styles.notificationMessage}>{item.message || 'No message.'}</Text>
+        {item.animal_type && (
+          <Text style={styles.animalType}>Animal: {item.animal_type}</Text>
+        )}
+      </View>
+      <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.iconButton}>
+        <Icon name="trash-2" size={20} color="#cc0000" />
+      </TouchableOpacity>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      {/* Back Button */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={goBackToRoleSelection} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={goBackToRoleSelection} style={styles.backButton}>
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Notifications</Text>
+        </View>
 
-        <Text style={styles.title}>Notifications</Text>
+        {isLoading ? (
+          <Text style={styles.noNotificationsText}>Loading...</Text>
+        ) : (
+          <FlatList
+            data={notifications}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+            ListEmptyComponent={() => (
+              <Text style={styles.noNotificationsText}>No notifications available.</Text>
+            )}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            contentContainerStyle={{ paddingBottom: 40 }}
+          />
+        )}
       </View>
-
-      {isLoading ? (
-        <Text style={styles.noNotificationsText}>Loading...</Text>
-      ) : (
-        <FlatList
-          data={notifications}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
-          ListEmptyComponent={() => (
-            <Text style={styles.noNotificationsText}>No notifications available.</Text>
-          )}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          contentContainerStyle={{ paddingBottom: 40 }}
-        />
-      )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#f0f8f5',
+  },
+  container: {
+    flex: 1,
     padding: 20,
   },
   header: {
@@ -120,15 +157,26 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   notificationItem: {
+    flexDirection: 'row',
     backgroundColor: '#fff',
     padding: 15,
     marginBottom: 10,
     borderRadius: 8,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  notificationImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  textContent: {
+    flex: 1,
   },
   notificationTitle: {
     fontSize: 18,
@@ -138,6 +186,15 @@ const styles = StyleSheet.create({
   notificationMessage: {
     fontSize: 14,
     color: '#555',
-    marginTop: 5,
+    marginTop: 4,
+  },
+  animalType: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  iconButton: {
+    padding: 8,
   },
 });
