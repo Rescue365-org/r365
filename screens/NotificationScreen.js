@@ -28,7 +28,7 @@ export default function NotificationScreen({ goBackToRoleSelection }) {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .or(assigned_rescuer_id.eq.${userId},reporter_id.eq.${userId})
+        .or(`assigned_rescuer_id.eq.${userId},reporter_id.eq.${userId}`)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -66,30 +66,32 @@ export default function NotificationScreen({ goBackToRoleSelection }) {
         <Text style={styles.title}>Notifications</Text>
       </View>
 
-      {isLoading ? (
-        <Text style={styles.noNotificationsText}>Loading...</Text>
-      ) : (
-        <FlatList
-          data={notifications}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
-          ListEmptyComponent={() => (
-            <Text style={styles.noNotificationsText}>No notifications available.</Text>
-          )}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          contentContainerStyle={{ paddingBottom: 40 }}
-        />
-      )}
-    </View>
+        {isLoading ? (
+          <Text style={styles.noNotificationsText}>Loading...</Text>
+        ) : (
+          <FlatList
+            data={notifications}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+            ListEmptyComponent={() => (
+              <Text style={styles.noNotificationsText}>No notifications available.</Text>
+            )}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            contentContainerStyle={{ paddingBottom: 40 }}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#f0f8f5',
+  },
+  container: {
+    flex: 1,
     padding: 20,
   },
   header: {
@@ -120,15 +122,26 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   notificationItem: {
+    flexDirection: 'row',
     backgroundColor: '#fff',
     padding: 15,
     marginBottom: 10,
     borderRadius: 8,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  notificationImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  textContent: {
+    flex: 1,
   },
   notificationTitle: {
     fontSize: 18,
@@ -138,6 +151,15 @@ const styles = StyleSheet.create({
   notificationMessage: {
     fontSize: 14,
     color: '#555',
-    marginTop: 5,
+    marginTop: 4,
+  },
+  animalType: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  iconButton: {
+    padding: 8,
   },
 });
