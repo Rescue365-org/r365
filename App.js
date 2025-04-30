@@ -555,8 +555,8 @@ async function handleGoogleSignIn() {
             report.status !== 'Rescue Complete' &&
             (
               isUnassigned ||                        // anyone can see
-              isAssignedToMe ||                     // I accepted it
-              (isReporter && isAssignedToMe)        // I reported it and accepted it
+              isAssignedToMe //||                     // I accepted it
+              //(isReporter && isAssignedToMe)        // I reported it and accepted it
             )
           );
         });
