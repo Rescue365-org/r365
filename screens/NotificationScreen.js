@@ -1,6 +1,17 @@
-// screens/NotificationScreen.js
+// Combined NotificationScreen.js with UI improvements + delete button
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  RefreshControl,
+  Image,
+  Alert,
+  SafeAreaView,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/Feather';
 import { supabase } from '../services/supabaseClient';
 
 export default function NotificationScreen({ goBackToRoleSelection }) {
@@ -48,23 +59,47 @@ export default function NotificationScreen({ goBackToRoleSelection }) {
     fetchNotifications(true);
   };
 
+  const handleDelete = async (id) => {
+    try {
+      const { error } = await supabase.from('notifications').delete().eq('id', id);
+      if (error) {
+        console.error('Failed to delete notification:', error.message);
+        Alert.alert('Error', 'Failed to delete notification.');
+      } else {
+        setNotifications((prev) => prev.filter((item) => item.id !== id));
+      }
+    } catch (e) {
+      console.error('Delete error:', e);
+    }
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.notificationItem}>
-      <Text style={styles.notificationTitle}>{item.title || 'Untitled'}</Text>
-      <Text style={styles.notificationMessage}>{item.message || 'No message.'}</Text>
+      {item.image_url && (
+        <Image source={{ uri: item.image_url }} style={styles.notificationImage} resizeMode="cover" />
+      )}
+      <View style={styles.textContent}>
+        <Text style={styles.notificationTitle}>{item.title || 'Untitled'}</Text>
+        <Text style={styles.notificationMessage}>{item.message || 'No message.'}</Text>
+        {item.animal_type && (
+          <Text style={styles.animalType}>Animal: {item.animal_type}</Text>
+        )}
+      </View>
+      <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.iconButton}>
+        <Icon name="trash-2" size={20} color="#cc0000" />
+      </TouchableOpacity>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      {/* Back Button */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={goBackToRoleSelection} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.title}>Notifications</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={goBackToRoleSelection} style={styles.backButton}>
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Notifications</Text>
+        </View>
 
         {isLoading ? (
           <Text style={styles.noNotificationsText}>Loading...</Text>

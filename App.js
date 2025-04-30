@@ -325,70 +325,32 @@ async function handleGoogleSignIn() {
       const imageUrl = publicUrlData.publicUrl;
   
       console.log("Inserting into database...");
-      const { data: inserted, error: dbError } = await supabase
-      .from('rescue_reports')
-      .insert([{
-        animal_type:    animalType,
-        severity:       severity,
-        description:    description,
-        location_lat:   location.latitude,
-        location_lng:   location.longitude,
-        address:        location.address,
-        image_url:      imageUrl,
-        status:         "Pending",
-        reporter_id:    user.id,
-      }])
-      .select();  // ← so we get back the inserted row
-
-    if (dbError || !inserted?.length) {
-      throw dbError || new Error("No report returned");
+      const { error: dbError } = await supabase.from('rescue_reports').insert([
+        {
+          animal_type: animalType,
+          severity: severity,
+          description: description,
+          location_lat: location.latitude,
+          location_lng: location.longitude,
+          address: location.address,
+          image_url: imageUrl,
+          status: "Pending",
+          reporter_id: user.id,
+        },
+      ]);
+  
+      if (dbError) {
+        console.error("DB insert error:", dbError);
+        Alert.alert("Error", "Failed to save report.");
+      } else {
+        Alert.alert("Success", "Your rescue report has been submitted!");
+        setImage(null);
+      }
+    } catch (err) {
+      console.error("Unhandled error during report submission:", err);
+      Alert.alert("Unexpected Error", "Something went wrong. Try again.");
     }
-
-    const newReport = inserted[0];
-
-    // 2) Fetch all the rescuer user-ids from your `rescuers` table
-    const { data: rescuerProfiles, error: rescuerErr } = await supabase
-      .from('rescuers')
-      .select('id');
-    if (rescuerErr) throw rescuerErr;
-
-    const rescuerIds = rescuerProfiles.map(r => r.id);
-
-    // 3) Fetch their Expo push tokens
-    const { data: tokensData, error: tokenErr } = await supabase
-      .from('device_tokens')
-      .select('push_token')
-      .in('user_id', rescuerIds);
-    if (tokenErr) throw tokenErr;
-
-    // 4) Build messages
-    const messages = tokensData.map(t => ({
-      to: t.push_token,
-      sound: 'default',
-      title: '🚨 New Rescue Report',
-      body: `${newReport.animal_type} — ${newReport.severity}`,
-      data: { reportId: newReport.id },
-    }));
-
-    // 5) Send to Expo’s push endpoint
-    await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: {
-        Accept:          'application/json',
-        'Accept-Encoding': 'gzip, deflate',
-        'Content-Type':  'application/json',
-      },
-      body: JSON.stringify({ messages })
-    });
-
-    Alert.alert("Success", "Report submitted and rescuers notified!");
-    setImage(null);
-
-  } catch (err) {
-    console.error("Error in submitRescueReport:", err);
-    Alert.alert("Error", err.message || "Something went wrong.");
-  }
-};
+  };
 
   const navigateToLocation = (latitude, longitude) => {
     const url = Platform.select({

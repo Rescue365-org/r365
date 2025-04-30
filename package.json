@@ -28,10 +28,8 @@
     "geolib": "^3.3.4",
     "react": "18.3.1",
     "react-native": "0.76.7",
-    "react-native-gesture-handler": "~2.20.2",
     "react-native-maps": "1.18.0",
     "react-native-picker-select": "^9.3.1",
-    "react-native-vector-icons": "^10.2.0",
     "typescript": "^5.3.3"
   },
   "devDependencies": {
