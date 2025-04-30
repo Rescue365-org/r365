@@ -20,8 +20,33 @@ export default function NotificationScreen({ goBackToRoleSelection }) {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
+    const markAllAsRead = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        await supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .or(`reporter_id.eq.${user.id},assigned_rescuer_id.eq.${user.id}`);
+      }
+    };
+  
+    markAllAsRead();
     fetchNotifications();
   }, []);
+  
+
+  const markAllAsRead = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.id) {
+      await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .or(`reporter_id.eq.${user.id},assigned_rescuer_id.eq.${user.id}`);
+    }
+  };
+  
+  markAllAsRead();
+  
 
   const fetchNotifications = async (showRefreshing = false) => {
     if (showRefreshing) setRefreshing(true);

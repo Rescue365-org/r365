@@ -1,6 +1,6 @@
 // App.js
 import React, { useState, useEffect } from 'react';
-import { Text, View, Alert, Platform, ScrollView, TouchableOpacity } from 'react-native';
+import { Text, View, Alert, Platform, ScrollView, TouchableOpacity, ToastAndroid } from 'react-native';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import * as WebBrowser from 'expo-web-browser';
@@ -67,6 +67,27 @@ export default function App() {
     checkVetVerification();
   }, [role, user]);
 
+
+  //NOTIFICATION EFFECT LOGIC
+  useEffect(() => {
+    const listener = Notifications.addNotificationReceivedListener(notification => {
+      const { title, body } = notification?.request?.content || {};
+      if (Platform.OS === 'android') {
+        ToastAndroid.showWithGravity(
+          `${title || 'New Alert'}: ${body || ''}`,
+          ToastAndroid.LONG,
+          ToastAndroid.TOP
+        );
+      } else {
+        Alert.alert(title || 'New Alert', body || 'You have a new notification');
+      }
+    });
+  
+    return () => {
+      listener.remove();
+    };
+  }, []);
+  
   // ------------------------
   // 1. AUTH & SESSION LOGIC
   // ------------------------
@@ -187,30 +208,43 @@ async function handleGoogleSignIn() {
   }, []);
 
   const registerForPushNotifications = async (userId) => {
-    if (Device.isDevice) {
+    try {
+      if (!Device.isDevice) {
+        console.log('Push notifications only work on physical devices');
+        return;
+      }
+  
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
+  
       if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
+  
       if (finalStatus !== 'granted') {
-        console.log("Final notification status:", finalStatus);
-        Alert.alert('Permission not granted for push notifications!');
+        console.warn('Notification permissions not granted');
         return;
       }
   
       const token = (await Notifications.getExpoPushTokenAsync()).data;
       console.log('Expo push token:', token);
   
-      // Save token to Supabase
-      await supabase
+      const { data: existing, error } = await supabase
         .from('device_tokens')
-        .upsert({ user_id: userId, push_token: token }, { onConflict: ['user_id'] });
-    } else {
-      Alert.alert('Push notifications only work on physical devices');
+        .select('push_token')
+        .eq('user_id', userId)
+        .single();
+  
+      if (!existing || existing.push_token !== token) {
+        await supabase
+          .from('device_tokens')
+          .upsert({ user_id: userId, push_token: token }, { onConflict: ['user_id'] });
+      }
+    } catch (err) {
+      console.error('Failed to register push notifications:', err);
     }
-  };
+  };  
   
   // ------------------------
   // 2. LOCATION & IMAGE LOGIC

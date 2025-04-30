@@ -16,6 +16,7 @@ import { supabase } from '../services/supabaseClient';
 export default function RoleSelectionScreen({ setRole, handleSignOut }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -25,6 +26,23 @@ export default function RoleSelectionScreen({ setRole, handleSignOut }) {
       }
     };
     fetchUser();
+  }, []);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('is_read', false)
+          .or(`reporter_id.eq.${user.id},assigned_rescuer_id.eq.${user.id}`);
+        if (!error) {
+          setUnreadCount(data.length);
+        }
+      }
+    };
+    fetchUnread();
   }, []);
 
   if (showNotifications) {
@@ -41,8 +59,16 @@ export default function RoleSelectionScreen({ setRole, handleSignOut }) {
         <View style={styles.logoWrapper}>
           <Image source={Rescue365Logo} style={styles.logo} resizeMode="cover" />
         </View>
-        <TouchableOpacity onPress={() => setShowNotifications(true)} style={styles.notificationButton}>
+        <TouchableOpacity onPress={() => {
+          setShowNotifications(true);
+        setUnreadCount(0);
+      }} style={styles.notificationButton}>
           <FontAwesome5 name="bell" size={20} color="#fff" />
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCount > 5 ? '5+' : unreadCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -172,4 +198,21 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: 'red',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  
 });
