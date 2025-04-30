@@ -1,4 +1,4 @@
-// screens/RoleSelectionScreen.js
+// Restored original RoleSelectionScreen layout with notification bell, centered logo, and email display
 import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
@@ -7,84 +7,74 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  StatusBar,
 } from 'react-native';
-import Rescue365Logo from '../Rescue365Logo.png';
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import Rescue365Logo from '../Rescue365Logo.png';
 import NotificationScreen from './NotificationScreen';
+import { supabase } from '../services/supabaseClient';
 
 export default function RoleSelectionScreen({ setRole, handleSignOut }) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
-  const showNotificationScreen = () => setShowNotifications(true);
-  const hideNotificationScreen = () => setShowNotifications(false);
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setUserEmail(user.email);
+      }
+    };
+    fetchUser();
+  }, []);
 
   if (showNotifications) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <NotificationScreen goBackToRoleSelection={hideNotificationScreen} />
+        <NotificationScreen goBackToRoleSelection={() => setShowNotifications(false)} />
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Image source={Rescue365Logo} style={styles.logo} />
-        <Text style={styles.title}>Welcome to Rescue365!</Text>
+      <View style={styles.headerRow}>
+        <View style={styles.logoWrapper}>
+          <Image source={Rescue365Logo} style={styles.logo} resizeMode="cover" />
+        </View>
+        <TouchableOpacity onPress={() => setShowNotifications(true)} style={styles.notificationButton}>
+          <FontAwesome5 name="bell" size={20} color="#fff" />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.roleContainer}>
+      <View style={styles.contentContainer}>
+        <Text style={styles.welcome}>Welcome to Rescue365!</Text>
+        <Text style={styles.email}>Logged in as: {userEmail || 'Loading...'}</Text>
         <Text style={styles.subtitle}>Select your role:</Text>
 
-        <View style={styles.grid}>
-          <TouchableOpacity
-            style={styles.gridButton}
-            onPress={() => setRole('bystander')}
-          >
-            <FontAwesome5 name="paw" size={28} color="#fff" />
-            <Text style={styles.gridLabel}>Bystander</Text>
+        <View style={styles.roleGrid}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => setRole('bystander')}>
+            <FontAwesome5 name="paw" size={24} color="#fff" />
+            <Text style={styles.iconLabel}>Bystander</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.gridButton}
-            onPress={() => setRole('rescuer')}
-          >
-            <MaterialIcons name="volunteer-activism" size={28} color="#fff" />
-            <Text style={styles.gridLabel}>Rescuer</Text>
+          <TouchableOpacity style={styles.iconButton} onPress={() => setRole('rescuer')}>
+            <MaterialIcons name="volunteer-activism" size={24} color="#fff" />
+            <Text style={styles.iconLabel}>Rescuer</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.gridButton}
-            onPress={() => setRole('vet')}
-          >
-            <FontAwesome5 name="clinic-medical" size={28} color="#fff" />
-            <Text style={styles.gridLabel}>Vet Staff</Text>
+          <TouchableOpacity style={styles.iconButton} onPress={() => setRole('vet')}>
+            <FontAwesome5 name="clinic-medical" size={24} color="#fff" />
+            <Text style={styles.iconLabel}>Vet Staff</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.gridButton}
-            onPress={() => setRole('donor')}
-          >
-            <MaterialIcons name="attach-money" size={28} color="#fff" />
-            <Text style={styles.gridLabel}>Donor</Text>
+          <TouchableOpacity style={styles.iconButton} onPress={() => setRole('donor')}>
+            <MaterialIcons name="attach-money" size={24} color="#fff" />
+            <Text style={styles.iconLabel}>Donor</Text>
           </TouchableOpacity>
         </View>
-      </View>
 
-      <View style={styles.footer}>
-        <TouchableOpacity
-          onPress={handleSignOut}
-          style={styles.signOutButton}
-        >
+        <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
           <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.notifyButton}
-          onPress={showNotificationScreen}
-        >
-          <FontAwesome5 name="bell" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -95,78 +85,91 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#f0f8f5',
-    paddingTop: StatusBar.currentHeight || 20,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 30,
+  headerRow: {
+    justifyContent: 'center',
+    paddingTop: 20,
+    paddingBottom: 10,
+    paddingHorizontal: 20,
+    position: 'relative'
+  },
+  logoWrapper: {
+    backgroundColor: '#fff',
+    borderRadius: 0,
+    overflow: 'hidden',
+    width: 160,
+    height: 160,
+    marginTop: 40,
+    marginBottom: 10,
+    borderWidth: 3,
+    borderColor: '#3b7d3c',
+    alignSelf: 'center',
+    justifyContent: 'center'
   },
   logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 10,
+    width: '100%',
+    height: '100%',
   },
-  title: {
-    fontSize: 26,
+  notificationButton: {
+    position: 'absolute',
+    top: 30,
+    right: 30,
+    backgroundColor: '#3b7d3c',
+    padding: 12,
+    borderRadius: 10,
+  },
+  contentContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 20,
+  },
+  welcome: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#3b7d3c',
+    marginBottom: 5,
   },
-
-  roleContainer: {
-    flex: 1,
-    alignItems: 'center',
+  email: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 15,
   },
   subtitle: {
     fontSize: 18,
     color: '#3b7d3c',
     marginBottom: 20,
   },
-  grid: {
+  roleGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    width: '90%',
+    justifyContent: 'center',
+    gap: 20,
+    marginBottom: 30,
   },
-  gridButton: {
-    width: '48%',
-    aspectRatio: 1,
+  iconButton: {
     backgroundColor: '#3b7d3c',
+    padding: 24,
     borderRadius: 12,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
+    margin: 12,
+    width: 140,
+    height: 120,
   },
-  gridLabel: {
+  iconLabel: {
     color: '#fff',
-    marginTop: 8,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-
-  footer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginTop: 5,
+    fontSize: 14,
+    fontWeight: '500',
   },
   signOutButton: {
     backgroundColor: '#d9534f',
-    paddingVertical: 12,
-    paddingHorizontal: 40,
+    padding: 15,
     borderRadius: 8,
-    marginBottom: 16,
+    alignSelf: 'center',
   },
   signOutText: {
     color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  notifyButton: {
-    position: 'absolute',
-    top: -10,
-    right: 20,
-    backgroundColor: '#3b7d3c',
-    padding: 10,
-    borderRadius: 20,
+    fontWeight: 'bold',
   },
 });
