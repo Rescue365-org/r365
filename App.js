@@ -309,6 +309,43 @@ async function handleGoogleSignIn() {
     ]);
   };
 
+  const sendPushToBystander = async (reportId, title, message) => {
+    try {
+      const { data: reportDetails } = await supabase
+        .from('rescue_reports')
+        .select('reporter_id')
+        .eq('id', reportId)
+        .single();
+  
+      if (!reportDetails?.reporter_id) return;
+  
+      const { data: tokenRow } = await supabase
+        .from('device_tokens')
+        .select('push_token')
+        .eq('user_id', reportDetails.reporter_id)
+        .single();
+  
+      const pushToken = tokenRow?.push_token;
+      if (!pushToken) return;
+  
+      await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Accept-encoding': 'gzip, deflate',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: pushToken,
+          title,
+          body: message,
+        }),
+      });
+    } catch (e) {
+      console.error('Push notification failed:', e);
+    }
+  };
+  
   // ------------------------
   // 3. RESCUE REPORT LOGIC
   // ------------------------
@@ -386,13 +423,21 @@ async function handleGoogleSignIn() {
     }
   };
 
-  const navigateToLocation = (latitude, longitude) => {
+  const navigateToLocation = async (latitude, longitude) => {
+    await sendPushToBystander(
+      selectedReport.id,
+      'Rescuer En Route',
+      'The rescuer has started navigating to the rescue location.'
+    );
+  
     const url = Platform.select({
       ios: `maps://?q=${latitude},${longitude}`,
       android: `geo:${latitude},${longitude}`,
     });
+  
     Linking.openURL(url);
   };
+  
 
   const updateRescueStatus = async (reportId, status) => {
     const { data, error } = await supabase
@@ -407,6 +452,7 @@ async function handleGoogleSignIn() {
     }
   
     Alert.alert("Status Updated", `Rescue status set to "${status}".`);
+    await sendPushToBystander(reportId, 'Rescue Update', `Your rescue is now marked: ${status}`);
   
     if (status === "Rescue Complete") {
       setRescueReports(currentReports =>
@@ -462,6 +508,18 @@ async function handleGoogleSignIn() {
       Alert.alert("Error", "Could not accept this rescue.");
     } else {
       Alert.alert("Accepted", "You’ve claimed this rescue.");
+      const { data: rescuerProfile } = await supabase
+      .from('rescuers')
+      .select('name, phone')
+      .eq('id', user.id)
+      .single();
+    
+    await sendPushToBystander(
+      reportId,
+      'Rescue Accepted',
+      `Your rescue was accepted by ${rescuerProfile?.name || 'a rescuer'} (${user.email}${rescuerProfile?.phone ? `, ${rescuerProfile.phone}` : ''})`
+    );
+    
       fetchReports();
   
       // Get reporter info
@@ -493,6 +551,11 @@ async function handleGoogleSignIn() {
       Alert.alert("Error", "Could not unassign the rescue.");
     } else {
       Alert.alert("Rescue Unassigned", "You’ve unassigned this case.");
+      await sendPushToBystander(
+        reportId,
+        'Rescue Cancelled',
+        'The rescuer has cancelled the rescue. You may submit again if needed.'
+      );      
       fetchReports(); // Refresh the list
     }
   };
@@ -511,6 +574,11 @@ async function handleGoogleSignIn() {
       Alert.alert("Error", "Failed to post status update.");
     } else {
       Alert.alert("Status Posted", "Your update was saved!");
+      await sendPushToBystander(
+        reportId,
+        'Rescue Status Update',
+        message
+      );      
     }
   };
   
