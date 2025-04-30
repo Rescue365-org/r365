@@ -2,8 +2,9 @@
   "expo": {
     "scheme": "rescue365",
     "owner": "rescue365",
+    "icon": "Rescue365Logo.png",
     "ios": {
-      "bundleIdentifier": "com.jaydenraphino.rescue365",
+      "bundleIdentifier": "com.kennethbyun.rescue365",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
